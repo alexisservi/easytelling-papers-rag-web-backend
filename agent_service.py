@@ -180,7 +180,7 @@ class AgentService:
                 session_id=actual_session_id
             )
             
-            return events
+            return events, actual_session_id
             
         except Exception as e:
             print(f"Error in send_message: {e}")

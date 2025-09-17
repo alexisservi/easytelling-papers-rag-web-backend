@@ -128,7 +128,7 @@ async def add_user(request: AddUserRequest, current_user: str = Depends(get_curr
 async def message_to_agent(request: MessageToAgentRequest, current_user: str = Depends(get_current_user)):
     try:
         # Send message to agent using the provided sample code logic
-        events = await agent_service.send_message(
+        events, actual_session_id = await agent_service.send_message(
             user_id=request.user_email,
             session_id=request.session_id,
             message=request.message_to_agent
@@ -141,7 +141,7 @@ async def message_to_agent(request: MessageToAgentRequest, current_user: str = D
             return MessageToAgentResponse(
                 status="success",
                 message=response_message,
-                session_id=request.session_id
+                session_id=actual_session_id
             )
         else:
             return MessageToAgentResponse(
