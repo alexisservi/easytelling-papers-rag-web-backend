@@ -48,6 +48,7 @@ class StandardResponse(BaseModel):
 
 class LoginResponse(StandardResponse):
     user_token: Optional[str] = None
+    is_admin: Optional[bool] = None
 
 class MessageToAgentResponse(StandardResponse):
     session_id: Optional[str] = None
@@ -66,30 +67,33 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @app.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
     try:
-        # Check if user exists in Firestore
-        user_exists = await db.user_exists(request.user_email)
-        
-        if not user_exists:
+        # Get user data from Firestore
+        user_data = await db.get_user(request.user_email)
+
+        if not user_data:
             return LoginResponse(
                 status="fail",
                 message="User not found",
-                user_token=None
+                user_token=None,
+                is_admin=None
             )
-        
+
         # Generate JWT token
         token = create_jwt_token(request.user_email)
-        
+
         return LoginResponse(
             status="success",
             message="Login successful",
-            user_token=token
+            user_token=token,
+            is_admin=user_data.get("is_admin", False)
         )
-    
+
     except Exception as e:
         return LoginResponse(
             status="fail",
             message=f"Login failed: {str(e)}",
-            user_token=None
+            user_token=None,
+            is_admin=None
         )
 
 @app.post("/add_user", response_model=StandardResponse)

@@ -75,7 +75,8 @@ Authorization: Bearer <jwt_token>
 {
   "status": "success|fail",
   "message": "Login successful|User not found|Login failed: <error>",
-  "user_token": "jwt_token_string_or_null"
+  "user_token": "jwt_token_string_or_null",
+  "is_admin": "boolean_or_null"
 }
 ```
 
@@ -89,6 +90,7 @@ curl -X POST "https://your-api-url/login" \
 **Important Notes for LLM Agents**:
 - The user must exist in the `rag_users` Firestore collection
 - Save the `user_token` from successful responses for use in protected endpoints
+- The `is_admin` field indicates whether the user has administrative privileges
 - Token expires after 24 hours
 
 ---
