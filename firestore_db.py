@@ -28,9 +28,9 @@ class FirestoreDB:
             True if user exists, False otherwise
         """
         try:
-            query = self.db.collection(self.collection_name).where("user_email", "==", user_email)
-            docs = await query.get()
-            return len(docs) > 0
+            doc_ref = self.db.collection(self.collection_name).document(user_email)
+            doc = await doc_ref.get()
+            return doc.exists
         except Exception as e:
             print(f"Error checking if user exists: {e}")
             return False
@@ -46,11 +46,11 @@ class FirestoreDB:
             True if user is admin, False otherwise
         """
         try:
-            query = self.db.collection(self.collection_name).where("user_email", "==", user_email)
-            docs = await query.get()
+            doc_ref = self.db.collection(self.collection_name).document(user_email)
+            doc = await doc_ref.get()
 
-            if len(docs) > 0:
-                user_data = docs[0].to_dict()
+            if doc.exists:
+                user_data = doc.to_dict()
                 return user_data.get("is_admin", False)
             return False
         except Exception as e:
@@ -69,20 +69,21 @@ class FirestoreDB:
             True if user was added successfully, False otherwise
         """
         try:
+            doc_ref = self.db.collection(self.collection_name).document(user_email)
+
             # Check if user already exists
-            query = self.db.collection(self.collection_name).where("user_email", "==", user_email)
-            docs = await query.get()
-            if len(docs) > 0:
+            doc = await doc_ref.get()
+            if doc.exists:
                 return False  # User already exists
 
-            # Add the new user with auto-generated document ID
+            # Add the new user
             user_data = {
                 "user_email": user_email,
                 "is_admin": is_admin,
                 "created_at": firestore.SERVER_TIMESTAMP
             }
 
-            await self.db.collection(self.collection_name).add(user_data)
+            await doc_ref.set(user_data)
             return True
         except Exception as e:
             print(f"Error adding user: {e}")
@@ -99,11 +100,11 @@ class FirestoreDB:
             User data dict if found, None otherwise
         """
         try:
-            query = self.db.collection(self.collection_name).where("user_email", "==", user_email)
-            docs = await query.get()
+            doc_ref = self.db.collection(self.collection_name).document(user_email)
+            doc = await doc_ref.get()
 
-            if len(docs) > 0:
-                return docs[0].to_dict()
+            if doc.exists:
+                return doc.to_dict()
             return None
         except Exception as e:
             print(f"Error getting user: {e}")
