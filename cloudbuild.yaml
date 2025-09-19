@@ -45,7 +45,7 @@ steps:
       - "300"
 
 images:
-  - "gcr.io/$PROJECT_ID/papers-rag-web-backend"
+  - "us-central1-docker.pkg.dev/${PROJECT_ID}/ia-repo-servinformacion/papers-rag-web-backend"
 
 options:
   logging: CLOUD_LOGGING_ONLY
