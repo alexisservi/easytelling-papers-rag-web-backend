@@ -42,6 +42,10 @@ class MessageToAgentRequest(BaseModel):
     session_id: str
     message_to_agent: str
 
+class DeleteSessionRequest(BaseModel):
+    user_email: str
+    session_id: str
+
 class StandardResponse(BaseModel):
     status: str
     message: str
@@ -159,6 +163,39 @@ async def message_to_agent(request: MessageToAgentRequest, current_user: str = D
             status="fail",
             message=f"Error communicating with agent: {str(e)}",
             session_id=request.session_id
+        )
+
+@app.delete("/delete_session", response_model=StandardResponse)
+async def delete_session(request: DeleteSessionRequest, current_user: str = Depends(get_current_user)):
+    try:
+        # Verify that the current user matches the user_email in the request
+        if current_user != request.user_email:
+            return StandardResponse(
+                status="fail",
+                message="You can only delete your own sessions"
+            )
+
+        # Delete the session using agent service
+        success = await agent_service.delete_user_session(
+            user_id=request.user_email,
+            session_id=request.session_id
+        )
+
+        if success:
+            return StandardResponse(
+                status="success",
+                message="Session deleted successfully"
+            )
+        else:
+            return StandardResponse(
+                status="fail",
+                message="Failed to delete session"
+            )
+
+    except Exception as e:
+        return StandardResponse(
+            status="fail",
+            message=f"Error deleting session: {str(e)}"
         )
 
 @app.get("/health")

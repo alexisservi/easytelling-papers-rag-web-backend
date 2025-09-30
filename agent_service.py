@@ -185,3 +185,78 @@ class AgentService:
         except Exception as e:
             print(f"Error in send_message: {e}")
             raise e
+
+    def delete_session(
+        self,
+        auth_token: str,
+        app_name: str,
+        user_id: str,
+        session_id: str
+    ) -> bool:
+        """
+        Deletes a specific session for a given user.
+
+        Args:
+            auth_token: The gcloud authentication token.
+            app_name: The name of the agent application.
+            user_id: The identifier for the user who owns the session.
+            session_id: The specific session ID to delete.
+
+        Returns:
+            True if the session was deleted successfully, False otherwise.
+        """
+        headers = {"Authorization": f"Bearer {auth_token}"}
+
+        # Construct the specific URL for the session to be deleted, as per the docs.
+        delete_url = f"{self.cloud_run_url}/apps/{app_name}/users/{user_id}/sessions/{session_id}"
+        print(f"Attempting to delete session: {delete_url}")
+
+        try:
+            # Make the DELETE request.
+            response = requests.delete(delete_url, headers=headers, timeout=60)
+
+            # This will raise an HTTPError for bad status codes (like 4xx or 5xx).
+            # A successful 204 No Content status from the server will NOT raise an error.
+            response.raise_for_status()
+
+            print(f"Success: Session '{session_id}' was deleted (Status Code: {response.status_code}).")
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            # This block catches errors like 404 (Not Found) or 401 (Unauthorized).
+            print(f"HTTP Error: Failed to delete session. Status code: {e.response.status_code}")
+            print(f"Response Body: {e.response.text}")
+            return False
+        except requests.exceptions.RequestException as e:
+            # This block catches other network-related errors (e.g., connection timeout).
+            print(f"An error occurred while deleting the session: {e}")
+            return False
+
+    async def delete_user_session(self, user_id: str, session_id: str) -> bool:
+        """
+        Delete a session for a specific user.
+
+        Args:
+            user_id: The user identifier (email)
+            session_id: The session identifier to delete
+
+        Returns:
+            True if session was deleted successfully, False otherwise
+        """
+        try:
+            # Step 1: Get authentication token
+            token = self.get_gcloud_auth_token()
+
+            # Step 2: Delete the session
+            success = self.delete_session(
+                auth_token=token,
+                app_name=self.app_name,
+                user_id=user_id,
+                session_id=session_id
+            )
+
+            return success
+
+        except Exception as e:
+            print(f"Error in delete_user_session: {e}")
+            return False
